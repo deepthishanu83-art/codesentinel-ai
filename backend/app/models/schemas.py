@@ -86,11 +86,39 @@ class RepositoryInfo(BaseModel):
 # ══════════════════════════════════════════════════════════════════════════════
 
 class AnalysisRequest(BaseModel):
-    """Parameters required to trigger a code analysis run."""
+    """
+    Parameters required to trigger a code analysis run.
+
+    Two modes are supported:
+
+    **Mode A — Direct source-code analysis (available now)**
+      Provide ``source_code`` (and optionally ``file_path`` / ``language``).
+      The ai_engine analyzers run immediately without GitHub access.
+
+    **Mode B — GitHub repository analysis (requires Member 3)**
+      Provide only ``owner`` / ``repo`` / ``branch``.
+      The endpoint returns HTTP 501 until Member 3 connects the GitHub fetch
+      layer that downloads files and feeds them to Mode A.
+    """
 
     owner:  str = Field(..., min_length=1, description="GitHub repository owner (user or org)")
     repo:   str = Field(..., min_length=1, description="GitHub repository name")
     branch: str = Field(default="main", min_length=1, description="Branch to analyse")
+
+    # ── Mode A: direct analysis fields (optional) ──────────────────────────
+    source_code: Optional[str] = Field(
+        None,
+        description="Raw source code to analyse directly (Mode A). "
+                    "When provided the analysis runs immediately without GitHub access.",
+    )
+    file_path: str = Field(
+        default="unknown.py",
+        description="Relative file path label used in findings (Mode A).",
+    )
+    language: str = Field(
+        default="python",
+        description="Programming language of the source code (Mode A).",
+    )
 
     class Config:
         json_schema_extra = {
@@ -98,6 +126,9 @@ class AnalysisRequest(BaseModel):
                 "owner": "alice",
                 "repo":  "my-repo",
                 "branch": "main",
+                "file_path": "src/auth/login.py",
+                "language": "python",
+                "source_code": "import os\npassword = 'secret123'\nquery = 'SELECT * FROM users WHERE id=' + user_id\n",
             }
         }
 
@@ -128,20 +159,23 @@ class IssueFinding(BaseModel):
 
 
 class AnalysisResponse(BaseModel):
-    """Full analysis report for a repository branch."""
+    """Full analysis report for a source file or repository branch."""
 
-    repository:   RepositoryInfo       = Field(..., description="Repository that was analysed")
-    branch:       str                  = Field(..., description="Branch that was analysed")
-    issues:       List[IssueFinding]   = Field(default_factory=list, description="List of issue findings")
-    total_issues: int                  = Field(..., ge=0, description="Total number of findings")
-    risk_score:   float                = Field(..., ge=0.0, le=10.0, description="Risk score 0–10")
-    risk_level:   RiskLevel            = Field(..., description="Overall risk classification")
+    repository:       RepositoryInfo       = Field(..., description="Repository context")
+    branch:           str                  = Field(..., description="Branch that was analysed")
+    issues:           List[IssueFinding]   = Field(default_factory=list, description="List of issue findings")
+    total_issues:     int                  = Field(..., ge=0, description="Total number of findings")
+    risk_score:       int                  = Field(..., ge=0, le=100, description="Risk score 0–100 (RiskCalculator)")
+    risk_level:       RiskLevel            = Field(..., description="Overall risk classification")
+    release_decision: Optional[str]        = Field(None, description="DO_NOT_RELEASE | RELEASE_WITH_WARNINGS | RELEASE_READY")
+    release_reason:   Optional[str]        = Field(None, description="Human-readable release decision rationale")
+    analysis_mode:    str                  = Field(default="direct", description="'direct' or 'github'")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "repository": {
-                    "id": 123456789,
+                    "id": 0,
                     "name": "my-repo",
                     "full_name": "alice/my-repo",
                     "private": False,
@@ -151,8 +185,11 @@ class AnalysisResponse(BaseModel):
                 "branch": "main",
                 "issues": [],
                 "total_issues": 0,
-                "risk_score": 0.0,
+                "risk_score": 0,
                 "risk_level": "low",
+                "release_decision": "RELEASE_READY",
+                "release_reason": "No issues detected.",
+                "analysis_mode": "direct",
             }
         }
 
