@@ -18,7 +18,7 @@ GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
 GITHUB_REDIRECT_URI = os.getenv(
     "GITHUB_REDIRECT_URI",
-    "http://localhost:8000/auth/github/callback",
+    "http://127.0.0.1:8000/api/github/callback",
 )
 GITHUB_API_URL = os.getenv("GITHUB_API_URL", "https://api.github.com")
 GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
