@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # CodeSentinel AI
 
 > **AI-powered GitHub Code Review and Release Assistant**
