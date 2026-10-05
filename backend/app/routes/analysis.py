@@ -35,23 +35,25 @@ router = APIRouter(prefix="/api", tags=["Analysis"])
 async def api_status() -> ApiStatusResponse:
     """
     Reports which backend engines are currently connected.
-
-    Member 2 (AI Review Engine) and Member 3 (GitHub Repository Engine)
-    will flip their respective statuses to CONNECTED once integrated.
     """
+    from app.services import analyzer_service, ai_service, fix_service  # noqa: PLC0415
+
+    analyzer_ok = analyzer_service.is_available()
+    ai_ok = ai_service.is_available()
+
     return ApiStatusResponse(
         api="CodeSentinel AI",
         version=APP_VERSION,
         engines=[
             EngineStatusInfo(
                 name="analyzer_engine",
-                status=EngineStatus.DISCONNECTED,
-                message="Waiting for Member 2 — AI Review Engine integration.",
+                status=EngineStatus.CONNECTED if analyzer_ok else EngineStatus.DISCONNECTED,
+                message="ai_engine.analyzers ready." if analyzer_ok else "ai_engine not importable — check PYTHONPATH.",
             ),
             EngineStatusInfo(
                 name="ai_engine",
-                status=EngineStatus.DISCONNECTED,
-                message="Waiting for Member 2 — AI Fix Engine integration.",
+                status=EngineStatus.CONNECTED if ai_ok else EngineStatus.DISCONNECTED,
+                message="ai_engine.llm ready." if ai_ok else "ai_engine not importable — check PYTHONPATH.",
             ),
             EngineStatusInfo(
                 name="github_engine",

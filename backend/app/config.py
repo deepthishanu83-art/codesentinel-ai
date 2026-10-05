@@ -33,6 +33,13 @@ SESSION_SECRET = os.getenv("SESSION_SECRET", secrets.token_hex(32))
 SESSION_COOKIE_NAME = "codesentinel_session"
 SESSION_COOKIE_MAX_AGE = 3600  # 1 hour
 
-# ── AI Service (Step 5) ────────────────────────────────────────────────────────
+# ── AI Service ─────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+# ── AI Engine (Member 2) ───────────────────────────────────────────────────────
+# AI_PROVIDER: gemini | openai | anthropic | mock
+# Falls back to "mock" so the engine runs locally without a real API key.
+AI_PROVIDER = os.getenv("AI_PROVIDER", "mock")
+AI_MODEL = os.getenv("AI_MODEL", "gemini-2.0-flash")
+AI_API_KEY = os.getenv("AI_API_KEY", "")
