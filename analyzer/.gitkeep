@@ -1,0 +1,5 @@
+# analyzer/
+#
+# This directory will contain static analysis tooling and language-specific
+# analyzers (e.g., Bandit for Python security, ESLint wrappers, etc.).
+# Added in a later step.
