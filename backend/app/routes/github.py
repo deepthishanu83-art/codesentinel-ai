@@ -10,6 +10,7 @@ Endpoints:
 
 Business logic lives in services/github_service.py.
 """
+import os
 import urllib.parse
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
@@ -115,8 +116,9 @@ async def github_callback_alias(
     access_token = await github_service.exchange_code_for_token(code)
     session_id = create_session(access_token)
 
+    frontend_url = os.environ.get("FRONTEND_URL", "http://127.0.0.1:5173")
     response = RedirectResponse(
-        url="/docs",
+        url=f"{frontend_url}/dashboard",
         status_code=status.HTTP_302_FOUND,
     )
     response.set_cookie(

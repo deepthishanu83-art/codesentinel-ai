@@ -1,21 +1,4 @@
-"""
-auth.py — GitHub OAuth 2.0 routes.
-
-Flow:
-  1. Browser visits GET /auth/github/login
-     → Backend generates a CSRF state token
-     → Backend redirects browser to GitHub authorization page
-
-  2. GitHub redirects browser to GET /auth/github/callback?code=...&state=...
-     → Backend validates state (CSRF check)
-     → Backend exchanges code for access token (server-to-server, secret stays hidden)
-     → Backend creates a server-side session
-     → Backend sets an HttpOnly session cookie
-     → Access token is NEVER sent to the browser
-
-  3. GET /auth/me — returns the logged-in user's GitHub profile
-  4. POST /auth/logout — invalidates the session and clears the cookie
-"""
+import os
 import urllib.parse
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
@@ -121,14 +104,14 @@ async def github_callback(
     # Store token server-side; browser only receives the session ID
     session_id = create_session(access_token)
 
-    response = Response(
-        content=(
-            '{"status":"authenticated",'
-            '"message":"GitHub login successful.",'
-            '"next":"/auth/me"}'
-        ),
-        media_type="application/json",
-        status_code=status.HTTP_200_OK,
+    # Redirect to the frontend dashboard so the user lands in the app.
+    # The session cookie is set on the redirect response; the browser will
+    # include it on all subsequent /auth/* and /api/* requests through the
+    # Vite dev-server proxy.
+    frontend_url = os.environ.get("FRONTEND_URL", "http://127.0.0.1:5173")
+    response = RedirectResponse(
+        url=f"{frontend_url}/dashboard",
+        status_code=status.HTTP_302_FOUND,
     )
     response.set_cookie(
         key=SESSION_COOKIE_NAME,

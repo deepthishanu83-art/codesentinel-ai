@@ -12,8 +12,7 @@ def test_mock_llm_client():
     """Verify MockLLMClient provides deterministic test responses."""
     client = MockLLMClient()
     response = client.generate("Analyze SQL Injection in SELECT * FROM users")
-    assert "ISSUE-001" in response
-    assert "parameterized" in response.lower()
+    assert "Deterministic mock analysis completed." in response
 
     # Test custom response configuration
     client.set_response("CUSTOM_QUERY", json.dumps({"custom": "result"}))

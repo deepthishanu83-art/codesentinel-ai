@@ -182,32 +182,6 @@ class MockLLMClient(LLMClient):
         for key, resp in self.custom_responses.items():
             if key in prompt:
                 return resp
-
-        # Default smart deterministic response based on prompt type
-        if "SQL Injection" in prompt or "SELECT" in prompt:
-            return json.dumps({
-                "issue_id": "ISSUE-001",
-                "explanation": "Direct string formatting concatenates untrusted user input into a SQL query, enabling SQL injection.",
-                "root_cause": "Unsanitized input interpolation into raw SQL statement.",
-                "impact": "Attackers can read, alter, or delete arbitrary database records.",
-                "suggested_fix": "Use parameterized queries with prepared statement placeholders.",
-                "fixed_code": "cursor.execute(\"SELECT * FROM users WHERE id = %s\", (user_id,))",
-                "confidence": 0.95,
-                "auto_fix": True
-            })
-
-        if "hardcoded" in prompt.lower() or "secret" in prompt.lower():
-            return json.dumps({
-                "issue_id": "ISSUE-002",
-                "explanation": "Hardcoded secret credentials in source code can be extracted from revision history.",
-                "root_cause": "Plaintext secret token committed in source file.",
-                "impact": "Unauthorized access to downstream services or production infrastructure.",
-                "suggested_fix": "Load secret credentials securely from environment variables.",
-                "fixed_code": "JWT_SECRET_KEY = os.getenv(\"JWT_SECRET_KEY\", \"\")",
-                "confidence": 0.95,
-                "auto_fix": True
-            })
-
         # Generic valid JSON response
         return json.dumps({
             "status": "success",

@@ -136,13 +136,16 @@ class AnalysisRequest(BaseModel):
 class IssueFinding(BaseModel):
     """A single issue discovered during code analysis."""
 
-    file:           str      = Field(..., description="Relative path to the affected file")
-    line:           int      = Field(..., ge=1, description="Line number of the issue")
-    severity:       Severity = Field(..., description="Issue severity level")
-    category:       Category = Field(..., description="Issue category")
-    title:          str      = Field(..., description="Short issue title")
-    description:    str      = Field(..., description="Detailed description of the issue")
-    recommendation: str      = Field(..., description="Suggested fix or next action")
+    file:           str            = Field(..., description="Relative path to the affected file")
+    line:           int            = Field(..., ge=1, description="Line number of the issue")
+    severity:       Severity       = Field(..., description="Issue severity level")
+    category:       Category       = Field(..., description="Issue category")
+    title:          str            = Field(..., description="Short issue title")
+    description:    str            = Field(..., description="Detailed description of the issue")
+    recommendation: str            = Field(..., description="Suggested fix or next action")
+    # Extra optional fields forwarded by the frontend for pattern matching in the fix engine
+    evidence:       Optional[str]  = Field(None, description="Raw evidence/code snippet from the analyzer")
+    raw_category:   Optional[str]  = Field(None, description="Original free-text category from the analyzer")
 
     class Config:
         json_schema_extra = {
@@ -205,6 +208,7 @@ class FixRequest(BaseModel):
     repo:    str         = Field(..., description="GitHub repository name")
     branch:  str         = Field(default="main", description="Target branch")
     finding: IssueFinding = Field(..., description="The issue to fix")
+    source_code: Optional[str] = Field(None, description="Optional raw source code for local analysis")
 
 
 class FixResult(BaseModel):
@@ -214,6 +218,19 @@ class FixResult(BaseModel):
     patch:         Optional[str]  = Field(None, description="Unified diff patch, if available")
     explanation:   str            = Field(..., description="Human-readable explanation of the fix")
     confidence:    float          = Field(..., ge=0.0, le=1.0, description="AI confidence 0–1")
+
+
+class ValidateFixRequest(BaseModel):
+    """Request to validate a proposed fix before committing or applying."""
+
+    fixed_code: Optional[str] = Field(None, description="The proposed fixed code to validate")
+    patch: Optional[str] = Field(None, description="Unified diff patch or fallback fixed code")
+    owner: Optional[str] = Field("local", description="Repository owner or 'local'")
+    repo: Optional[str] = Field("uploaded-file", description="Repository name or 'uploaded-file'")
+    branch: Optional[str] = Field("local", description="Branch name")
+    source_code: Optional[str] = Field(None, description="Original source code if available")
+    finding: Optional[dict] = Field(None, description="Issue finding dictionary")
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -193,6 +193,8 @@ async def analyze(request: AnalysisRequest, req: Request) -> AnalysisResponse:
                     title=str(f.get("title", "Issue detected")),
                     description=str(f.get("description", "")),
                     recommendation=str(f.get("recommendation", f.get("fix", ""))),
+                    evidence=str(f.get("evidence", "")) or None,
+                    raw_category=str(f.get("category", f.get("type", ""))) or None,
                 )
             )
         except Exception:  # noqa: BLE001

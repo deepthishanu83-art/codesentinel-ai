@@ -231,13 +231,17 @@ async def get_repository_tree(token: str, owner: str, repo: str, branch: str = "
     return response.json().get("tree", [])
 
 
-async def get_file_content(token: str, owner: str, repo: str, path: str) -> str:
+async def get_file_content(token: str, owner: str, repo: str, path: str, branch: str = None) -> str:
     """Fetch the decoded text content of a file from GitHub."""
     import base64
 
+    url = f"{GITHUB_API_URL}/repos/{owner}/{repo}/contents/{path}"
+    if branch:
+        url += f"?ref={branch}"
+
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
         response = await client.get(
-            f"{GITHUB_API_URL}/repos/{owner}/{repo}/contents/{path}",
+            url,
             headers=_auth_headers(token),
         )
 
@@ -348,7 +352,7 @@ async def fetch_all_source_files(token: str, owner: str, repo: str, branch: str 
     results = []
     for meta in files_to_fetch:
         try:
-            content = await get_file_content(token, owner, repo, meta["path"])
+            content = await get_file_content(token, owner, repo, meta["path"], branch=branch)
             results.append({
                 "path": meta["path"],
                 "language": meta["language"],
@@ -393,7 +397,15 @@ async def create_branch(token: str, owner: str, repo: str, branch_name: str, fro
         )
 
     if response.status_code == 422:
-        raise HTTPException(status_code=400, detail=f"Branch {branch_name} already exists or is invalid.")
+        try:
+            existing = await get_branch(token, owner, repo, branch_name)
+            return {
+                "status": "success",
+                "branch": branch_name,
+                "sha": existing["object"]["sha"],
+            }
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"Branch {branch_name} already exists or is invalid.")
 
     if response.status_code != 201:
         raise HTTPException(status_code=502, detail=f"Error creating branch {branch_name}.")
